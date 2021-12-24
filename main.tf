@@ -6,6 +6,10 @@ resource "random_id" "salt" {
   byte_length = 8
 }
 
+locals {
+  name = format("tf-elasticache-%s-%s", var.name, lookup(data.aws_vpc.vpc.tags, "Name", ""))
+}
+
 resource "aws_elasticache_replication_group" "redis" {
   replication_group_id          = format("%.20s", "${var.name}-${var.env}")
   replication_group_description = "Terraform-managed ElastiCache replication group for ${var.name}-${var.env}-${data.aws_vpc.vpc.tags["Name"]}"
@@ -21,7 +25,7 @@ resource "aws_elasticache_replication_group" "redis" {
   maintenance_window            = var.redis_maintenance_window
   snapshot_window               = var.redis_snapshot_window
   snapshot_retention_limit      = var.redis_snapshot_retention_limit
-  tags                          = merge(map("Name", format("tf-elasticache-%s-%s", var.name, lookup(data.aws_vpc.vpc.tags, "Name", ""))), var.tags)
+  tags                          = merge(tomap({ "Name" = local.name }), var.tags)
 }
 
 resource "aws_elasticache_parameter_group" "redis_parameter_group" {
